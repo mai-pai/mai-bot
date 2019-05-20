@@ -1,0 +1,6 @@
+{
+    "token": "<discord-bot-token>",
+    "ytkey": "<youtube-api-key>",
+    "owner": "<bot owner id>",
+    "dbPath": "./mai-bot.db"
+}

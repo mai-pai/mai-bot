@@ -1,0 +1,44 @@
+{
+  "name": "mai-bot",
+  "version": "1.0.0",
+  "description": "Yet Another Discord Music Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon",
+    "prod": "nodemon ./build/main.js",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mai-pai/mai-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/uws": "11.149.1",
+    "better-sqlite3": "5.4.0",
+    "bufferutil": "4.0.1",
+    "discord.js": "11.5.0",
+    "erlpack": "github:discordapp/erlpack",
+    "googleapis": "40.0.0",
+    "libsodium-wrappers": "0.7.4",
+    "miniget": "1.5.1",
+    "moment": "2.24.0",
+    "node-opus": "0.3.1",
+    "ytdl-core": "0.29.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "5.4.0",
+    "@types/node": "12.0.2",
+    "nodemon": "1.19.0",
+    "prettier": "1.17.1",
+    "tslint": "5.16.0",
+    "tslint-config-prettier": "1.18.0",
+    "tslint-eslint-rules": "5.4.0",
+    "typescript": "3.4.5"
+  }
+}
