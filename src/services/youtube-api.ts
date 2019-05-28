@@ -26,7 +26,33 @@ export class YoutubeApi {
     });
   }
 
-  public async get(videoId: string): Promise<VideoDetails | null> {
+  public async getThumbnailUrl(videoId: string): Promise<string | void> {
+    if (!videoId) throw new Error('Video ID required.');
+
+    const response = await this.client.videos.list({
+      hl: 'en',
+      id: videoId,
+      part: 'snippet'
+    });
+
+    const videos = response.data.items || [];
+    if (videos.length > 0) {
+      const snippet = videos[0].snippet;
+
+      if (snippet && snippet.thumbnails) {
+        const thumbnails = snippet.thumbnails;
+        if (thumbnails.default) return Promise.resolve(thumbnails.default.url);
+        if (thumbnails.medium) return Promise.resolve(thumbnails.medium.url);
+        if (thumbnails.high) return Promise.resolve(thumbnails.high.url);
+        if (thumbnails.standard) return Promise.resolve(thumbnails.standard.url);
+        if (thumbnails.maxres) return Promise.resolve(thumbnails.maxres.url);
+      }
+    }
+
+    return Promise.resolve();
+  }
+
+  public async get(videoId: string): Promise<VideoDetails | void> {
     if (!videoId) throw new Error('Video ID required.');
 
     const response = await this.client.videos.list({
@@ -50,7 +76,7 @@ export class YoutubeApi {
         });
     }
 
-    return Promise.resolve(null);
+    return Promise.resolve();
   }
 
   public async search(query: string, maxResults?: number): Promise<Video[]> {

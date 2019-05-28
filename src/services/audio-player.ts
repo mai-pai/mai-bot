@@ -17,6 +17,12 @@ type PlayerInfo = {
   ytdlFormat?: videoFormat;
 };
 
+type CurrentSongInfo = {
+  song: VideoDetails;
+  requestedBy?: Snowflake;
+  songNumber: number;
+};
+
 enum VoiceStatus {
   CONNECTED = 0,
   CONNECTING = 1,
@@ -59,31 +65,28 @@ export class AudioPlayer {
 
   public addSong(message: Message, song: VideoDetails): number {
     const guild = message.guild.id;
-    const entry = this.playlist.addSong(guild, song);
+    const user = message.author.id;
+
+    this.playlist.addSong(guild, user, song);
+    if (!this.isPlaying(guild) && !this.isPaused(guild)) this.play(message);
+
     const length = this.playlist.length(guild);
-    let position: number = length - 1;
-    let info = this.playing.get(guild);
+    const info = this.playing.get(guild) as PlayerInfo;
 
-    if (!info) {
-      info = { player: this, entry, connection: message.guild.voiceConnection };
-      this.playing.set(guild, info);
-      this.connect(message, info);
-    } else position = length - this.playlist.index(guild, info.entry);
-
-    return position;
+    return length - this.playlist.index(guild, info.entry) - 1;
   }
 
   public removeSong(guild: Snowflake, songNumber: number): PlayListEntry | undefined {
     const info = this.playing.get(guild);
     if (info) {
       const index = this.playlist.index(guild, info.entry);
-      if (songNumber === 0) {
+      if (songNumber === index + 1) {
         this.skip(guild);
         return this.playlist.removeSong(guild, index);
       }
+    }
 
-      return this.playlist.removeSong(guild, index + songNumber);
-    } else if (songNumber > 0) return this.playlist.removeSong(guild, songNumber - 1);
+    if (songNumber > 0) return this.playlist.removeSong(guild, songNumber - 1);
   }
 
   public pause(guild: Snowflake): void {
@@ -113,17 +116,26 @@ export class AudioPlayer {
     }
   }
 
-  public skip(guild: Snowflake, songNumber?: number): void {
+  public skip(guild: Snowflake, songNumber?: number): boolean {
     const info = this.playing.get(guild);
-    if (info && info.connection) {
-      if (songNumber && songNumber > 1) {
-        const index = this.playlist.index(guild, info.entry);
-        const entry = this.playlist.getSongAtIndex(guild, index + songNumber - 1);
-        if (entry) info.entry = entry;
-      }
 
+    if (!info || !info.connection || !info.connection.dispatcher) return false;
+    if (songNumber === undefined || songNumber === null) songNumber = 0;
+    if (songNumber < 0 || songNumber > this.playlist.length(guild)) return false;
+
+    const index = this.playlist.index(guild, info.entry);
+    if (songNumber === index + 1) return false;
+    if (songNumber > 0 && songNumber !== (index + 2)) {
+      info.connection.dispatcher.removeAllListeners();
       info.connection.dispatcher.end();
-    }
+
+      const entry = this.playlist.getSongAtIndex(guild, songNumber - 1);
+      if (entry) info.entry = entry;
+
+      this.voiceConnected.apply(info, [info.connection]);
+    } else info.connection.dispatcher.end();
+
+    return true;
   }
 
   public isPlaying(guild: Snowflake): boolean {
@@ -137,11 +149,8 @@ export class AudioPlayer {
   }
 
   public isInRange(guild: Snowflake, songNumber: number): boolean {
-    const info = this.playing.get(guild);
-    const index = info ? this.playlist.index(guild, info.entry) : -1;
-    const songIndex = songNumber + index;
-
-    return songIndex > index && songIndex < this.playlist.length(guild);
+    const songIndex = songNumber - 1;
+    return songIndex >= 0 && songIndex < this.playlist.length(guild);
   }
 
   public getQueue(message: Message, pageNumber: number): QueueInfo | undefined {
@@ -150,6 +159,31 @@ export class AudioPlayer {
     if (!info) return;
 
     return this.playlist.getQueue(guild, info.entry, pageNumber);
+
+    // const entry = this.playlist.getSongAtIndex(guild, 25) as PlayListEntry;
+    // return this.playlist.getQueue(guild, entry, pageNumber);
+  }
+
+  public getCurrent(guild: Snowflake): CurrentSongInfo | undefined {
+    const info = this.playing.get(guild);
+
+    if (!info) return;
+
+    return {
+      requestedBy: info.entry.requestedBy,
+      song: info.entry.song,
+      songNumber: this.playlist.index(guild, info.entry) + 1,
+    };
+
+    // const entry = this.playlist.getSongAtIndex(guild, 0) as PlayListEntry;
+    // return {song: entry.song, requestedBy: entry.requestedBy, songNumber: this.playlist.index(guild, entry) + 1}
+  }
+
+  public getTime(guild: Snowflake): number {
+    const info = this.playing.get(guild);
+    if (!info || !info.connection || !info.connection.dispatcher) return 0;
+
+    return info.connection.dispatcher.time;
   }
 
   private connect(message: Message, info: PlayerInfo) {
@@ -185,7 +219,7 @@ export class AudioPlayer {
         }
       });
     }
-    info.stream = ytdl(info.entry.song.id, { quality: 'highestaudio', filter: 'audioonly', highWaterMark: 0x100000 });
+    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x100000 });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
 
@@ -264,9 +298,9 @@ export class AudioPlayer {
       const index = playlist.index(guild, this.entry);
       const hasNext = index + 1 < length;
       if (hasNext || repeat) {
-        this.entry = playlist.getNextSong(guild, this.entry) as PlayListEntry;
+        const songIndex = hasNext ? index + 1 : 0;
+        this.entry = playlist.getSongAtIndex(guild, songIndex) as PlayListEntry;
 
-        const songIndex = player.playlist.index(guild, this.entry);
         player.settings.set(guild, SettingType.SongIndex, songIndex);
         setTimeout(player.voiceConnected.bind(this), 0, this.connection);
       } else player.settings.reset(guild, SettingType.SongIndex);

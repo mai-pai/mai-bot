@@ -21,7 +21,7 @@ export class SkipCommand extends Command {
 
     const guild = message.guild.id;
     if (this.bot.player.isPlaying(guild)) {
-      let skipTo = 1;
+      let skipTo = 0;
       if (args) {
         skipTo = parseInt(args.trim(), 10);
         if (isNaN(skipTo) || skipTo < 1) return this.onBlock(message, BlockReason.InvalidArgs);
@@ -29,8 +29,9 @@ export class SkipCommand extends Command {
           return message.channel.send(':x: The specified position is outside of the queue length!');
       }
 
-      this.bot.player.skip(guild, skipTo);
-      return message.channel.send(':ballot_box_with_check: The current song has been skipped.');
+      if (this.bot.player.skip(guild, skipTo))
+        return message.channel.send(':ballot_box_with_check: The current song has been skipped.');
+      return message.channel.send(':x: Song to skip to is currently playing!');
     }
 
     return this.onBlock(message, BlockReason.NotPlaying);

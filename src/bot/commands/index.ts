@@ -1,4 +1,5 @@
 export { ClearCommand } from './clear';
+export { CurrentCommand } from './current';
 export { LoopCommand } from './loop';
 export { PauseCommand } from './pause';
 export { PlayCommand as PlCommand, PlayCommand } from './play';

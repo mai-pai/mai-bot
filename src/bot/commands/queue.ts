@@ -13,7 +13,7 @@ export class QueueCommand extends Command {
   }
 
   public description(): string {
-    return 'Shows the remaining songs in the queue.';
+    return 'Shows the list songs in the playlist.';
   }
 
   public async run(message: Message, args: string): Promise<Message | Message[]> {
@@ -23,7 +23,7 @@ export class QueueCommand extends Command {
     const guild = message.guild.id;
     if (!this.bot.player.isPlaying(guild)) return this.onBlock(message, BlockReason.NotPlaying);
 
-    let pageNumber = 1;
+    let pageNumber = 0;
     if (args) {
       pageNumber = parseInt(args.trim(), 10);
       if (isNaN(pageNumber) || pageNumber < 1) return this.onBlock(message, BlockReason.InvalidArgs);
@@ -37,42 +37,24 @@ export class QueueCommand extends Command {
       let queueMessage: Message | undefined;
       while (true) {
         const embed = new RichEmbed().setColor(0x3498db);
-
-        if (queue.previous)
-          embed.addField(
-            'Previous Song:',
-            `${queue.previous.song.title} \`${moment()
-              .startOf('day')
-              .seconds(queue.previous.song.duration)
-              .format('HH:mm:ss')}\``
-          );
         const text: string[] = [];
-        if (queue.next)
-          text.push(
-            `\`1.\` ${queue.next.song.title} \`${moment()
-              .startOf('day')
-              .seconds(queue.next.song.duration)
-              .format('HH:mm:ss')}\`\n`
-          );
 
         // tslint:disable-next-line
         if (queue.entries.length > 0) {
           for (let i = 0; i < queue.entries.length; ++i) {
-            if (queue.entries[i] === queue.next) continue;
-
             const songNumber = (queue.pageNumber - 1) * 10 + i + 1;
-            text.push(
-              `\`${songNumber}.\` ${queue.entries[i].song.title} \`${moment()
-                .startOf('day')
-                .seconds(queue.entries[i].song.duration)
-                .format('HH:mm:ss')}\``
-            );
+            const songEntry = `\`${songNumber}.\` ${queue.entries[i].song.title} \`${moment()
+              .startOf('day')
+              .seconds(queue.entries[i].song.duration)
+              .format('HH:mm:ss')}\``;
+            const highlight = queue.entries[i] === queue.current ? '**' : '';
+            text.push(`${highlight}${songEntry}${highlight}`);
           }
         }
 
         // tslint:disable-next-line
         if (text.length > 0) {
-          embed.addField('Next Song:', text.join('\n')).setFooter(
+          embed.addField(`:musical_note: ${message.guild.name}'s Playlist`, text.join('\n')).setFooter(
             `Page: ${queue.pageNumber}/${queue.pageCount} | Total duration: ${moment()
               .startOf('day')
               .seconds(queue.totalDuration)
@@ -81,9 +63,8 @@ export class QueueCommand extends Command {
         }
 
         if (embed.fields && embed.fields.length > 0) {
-          const content = `:musical_note: ${message.guild.name}'s Playlist`;
-          if (queueMessage) queueMessage = await queueMessage.edit(content, embed);
-          else queueMessage = (await message.channel.send(content, embed)) as Message;
+          if (queueMessage) queueMessage = await queueMessage.edit( embed);
+          else queueMessage = (await message.channel.send(embed)) as Message;
 
           if (queue.pageCount < 2) return queueMessage;
 
@@ -103,8 +84,8 @@ export class QueueCommand extends Command {
               time: 15000,
             })).first();
 
-            if (reaction.emoji.name === '◀') pageNumber -= 1;
-            else if (reaction.emoji.name === '▶') pageNumber += 1;
+            if (reaction.emoji.name === '◀') pageNumber = queue.pageNumber - 1;
+            else if (reaction.emoji.name === '▶') pageNumber = queue.pageNumber + 1;
             else break;
 
             queue = this.bot.player.getQueue(message, pageNumber);

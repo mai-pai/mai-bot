@@ -162,6 +162,10 @@ export class MaiBot {
     return this.client.user.setActivity(name, options);
   }
 
+  public getAvatarUrl(): string {
+    return this.client.user.avatarURL;
+  }
+
   private parseCommand(message: Message): ICommand | null {
     const guild = message.guild.id;
     const prefix = this.settings.get(guild, SettingType.Prefix, SettingsRespository.DefaultPrefix);
