@@ -9,6 +9,7 @@ export enum SettingType {
   ShowPlayingMessage = 'showPlayingMessage',
   Prefix = 'prefix',
   SongIndex = 'songIndex',
+  PlaylistId = 'playlistId'
 }
 
 type Settings = { [index in SettingType]?: any };

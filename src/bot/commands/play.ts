@@ -71,7 +71,7 @@ export class PlayCommand extends Command {
     if (!videoInfo) return message.channel.send(':x: No results found!');
 
     const position = this.bot.player.addSong(message, videoInfo);
-    const positionMsg = position > 0 ? `to position: \`${position}\`` : 'to be played now';
+    const positionMsg = position > 1 ? `to position: \`${position}\`` : 'to be played now';
 
     return message.channel.send(`:musical_note: **Added** \`${videoInfo.title}\` ${positionMsg}`);
   }

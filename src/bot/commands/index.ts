@@ -1,11 +1,13 @@
 export { ClearCommand } from './clear';
 export { CurrentCommand } from './current';
+export { LoadCommand } from './load';
 export { LoopCommand } from './loop';
 export { PauseCommand } from './pause';
 export { PlayCommand as PlCommand, PlayCommand } from './play';
 export { QueueCommand as QCommand, QueueCommand } from './queue';
 export { RemoveCommand } from './remove';
 export { ResumeCommand } from './resume';
+export { SaveCommand } from './save';
 export { SearchCommand } from './search';
 export { SettingsCommand } from './settings';
 export { ShuffleCommand } from './shuffle';

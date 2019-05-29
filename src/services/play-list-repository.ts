@@ -46,27 +46,27 @@ export class PlayListRepository {
     this.playlists = new Map<Snowflake, PlayListEntry[]>();
   }
 
-  public hasSongs(snowflake: Snowflake | Guild | GuildMember): boolean {
-    const id = this.initialize(snowflake);
+  public hasSongs(playlistId: Snowflake | Guild | GuildMember): boolean {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id);
 
     return !!(playlist && playlist.length > 0);
   }
 
-  public addSong(snowflake: Snowflake | Guild | GuildMember, requestedBy: Snowflake | GuildMember, song: VideoDetails): PlayListEntry {
-    const id = this.initialize(snowflake);
+  public addSong(playlistId: Snowflake | Guild | GuildMember, requestedBy: Snowflake | GuildMember, song: VideoDetails): PlayListEntry {
+    const id = this.initialize(playlistId);
     const userId = this.getSnowflake(requestedBy) as Snowflake;
     const playlist = this.playlists.get(id) as PlayListEntry[];
     const entry = { id: Date.now(), song, requestedBy: userId };
 
     playlist.push(entry);
-    this.upsertSongStmt.run(id, entry.id, JSON.stringify(song));
+    this.upsertSongStmt.run(id, entry.id, JSON.stringify(entry));
 
     return entry;
   }
 
-  public removeSong(snowflake: Snowflake | Guild | GuildMember, songIndex: number): PlayListEntry | undefined {
-    const id = this.initialize(snowflake);
+  public removeSong(playlistId: Snowflake | Guild | GuildMember, songIndex: number): PlayListEntry | undefined {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
     if (songIndex >= 0) {
@@ -78,8 +78,8 @@ export class PlayListRepository {
     }
   }
 
-  public getSongAtIndex(snowflake: Snowflake | Guild | GuildMember, index: number): PlayListEntry | undefined {
-    const id = this.initialize(snowflake);
+  public getSongAtIndex(playlistId: Snowflake | Guild | GuildMember, index: number): PlayListEntry | undefined {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
     if (index < 0 || index >= playlist.length) return;
@@ -87,8 +87,8 @@ export class PlayListRepository {
     return playlist[index];
   }
 
-  public getNextSong(snowflake: Snowflake | Guild | GuildMember, current: PlayListEntry): PlayListEntry | undefined {
-    const id = this.initialize(snowflake);
+  public getNextSong(playlistId: Snowflake | Guild | GuildMember, current: PlayListEntry): PlayListEntry | undefined {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
     if (playlist.length === 0) return;
@@ -101,10 +101,10 @@ export class PlayListRepository {
   }
 
   public getPreviousSong(
-    snowflake: Snowflake | Guild | GuildMember,
+    playlistId: Snowflake | Guild | GuildMember,
     current: PlayListEntry
   ): PlayListEntry | undefined {
-    const id = this.initialize(snowflake);
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
     const index = playlist.findIndex(e => e.id === current.id);
 
@@ -112,12 +112,12 @@ export class PlayListRepository {
   }
 
   public getQueue(
-    snowflake: Snowflake | Guild | GuildMember,
+    playlistId: Snowflake | Guild | GuildMember,
     current: PlayListEntry,
     page: number = 1,
     pageSize: number = 10
   ): QueueInfo | undefined {
-    const id = this.initialize(snowflake);
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
     const index = playlist.findIndex(e => e.id === current.id);
 
@@ -142,18 +142,55 @@ export class PlayListRepository {
     };
   }
 
-  public length(snowflake: Snowflake | Guild | GuildMember): number {
-    const id = this.initialize(snowflake);
+  public length(playlistId: Snowflake | Guild | GuildMember): number {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
     return playlist.length;
   }
 
-  public index(snowflake: Snowflake | Guild | GuildMember, entry: PlayListEntry): number {
-    const id = this.initialize(snowflake);
+  public index(playlistId: Snowflake | Guild | GuildMember, entry: PlayListEntry): number {
+    const id = this.initialize(playlistId);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
     return playlist.findIndex(e => e.id === entry.id);
+  }
+
+  public save(playlistId: Snowflake | Guild | GuildMember, snowflake: Snowflake | Guild | GuildMember): Error | undefined {
+    if (playlistId === snowflake) return new Error("Can't over-write playlist with itself!");
+
+    const id = this.initialize(playlistId);
+    const saveId = this.getSnowflake(snowflake);
+    const playlist = this.playlists.get(id) as PlayListEntry[];
+
+    if (playlist.length === 0) return new Error("There are no song(s) to save!");
+
+    this.database.prepare('BEGIN').run();
+    this.database.prepare('DELETE FROM playlist WHERE snowflake = ?').run(saveId);
+    const insertStmt = this.database.prepare('INSERT INTO playlist VALUES(?, ?, ?)');
+    for (const entry of playlist)
+      insertStmt.run(saveId, entry.id, JSON.stringify(entry));
+
+    this.playlists.delete(id);
+    this.playlists.set(saveId, playlist);
+    this.database.prepare('COMMIT').run();
+  }
+
+  public load(playlistId: Snowflake, snowflake: Snowflake): Error | undefined {
+    if (playlistId === snowflake) return new Error('Playlist already loaded!');
+    const id = this.getSnowflake(playlistId);
+    this.initialize(snowflake);
+
+    this.playlists.delete(id);
+  }
+
+  public clear(playlistId: Snowflake): Error | undefined {
+    const id = this.getSnowflake(playlistId);
+
+    if (!this.playlists.has(id)) return new Error('The playlist to clear does not exist.');
+
+    this.playlists.delete(id);
+    this.deletePlaylistStmt.run(id);
   }
 
   private getSnowflake(snowflake: Snowflake | Guild | GuildMember): Snowflake {
@@ -171,7 +208,8 @@ export class PlayListRepository {
       for (const row of rows) {
         try {
           const song = JSON.parse(row.info);
-          playlist.push({ id: row.id, song });
+          if (song.title) playlist.push({ id: row.id, song });
+          else playlist.push(song);
         } catch (err) {
           console.log(`Unable to parse song info: ${row.info}`);
         }

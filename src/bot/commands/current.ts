@@ -47,12 +47,17 @@ export class CurrentCommand extends Command {
         .seconds(current.song.duration)
         .format('HH:mm:ss')}`;
 
+      let requester = 'Unknown';
+      if (current.requestedBy) {
+        const member = message.guild.members.find('id', current.requestedBy);
+        if (member && member.displayName) requester = member.displayName;
+      }
       embed
         .setAuthor('Now Playing', iconUrl, undefined)
         .setDescription(
           `[**${current.songNumber}.** ${current.song.title}](https://www.youtube.com/watch?v=${current.song.id})`
         )
-        .addField('Requested By', current.requestedBy ? current.requestedBy : 'Unknown', true)
+        .addField('Requested By', requester, true)
         .addField('Progress', progress, true);
 
       if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);

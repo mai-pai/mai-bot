@@ -1,5 +1,6 @@
 import { CollectorFilter, Message, RichEmbed } from 'discord.js';
 import moment from 'moment';
+import { SettingType } from '../../services/settings-repository';
 import { MaiBot } from '../mai-bot';
 import { BlockReason, Command } from './base';
 
@@ -54,7 +55,13 @@ export class QueueCommand extends Command {
 
         // tslint:disable-next-line
         if (text.length > 0) {
-          embed.addField(`:musical_note: ${message.guild.name}'s Playlist`, text.join('\n')).setFooter(
+          const playlistId = this.bot.settings.get(guild, SettingType.PlaylistId, guild);
+          let playlistName = message.guild.name;
+          if (playlistId !== guild) {
+            const member = message.guild.members.find("id", playlistId);
+            if (member && member.displayName) playlistName = member.displayName;
+          }
+          embed.addField(`:musical_note: ${playlistName}'s Playlist`, text.join('\n')).setFooter(
             `Page: ${queue.pageNumber}/${queue.pageCount} | Total duration: ${moment()
               .startOf('day')
               .seconds(queue.totalDuration)

@@ -28,6 +28,8 @@ export class MaiBot {
   constructor(private config: any) {
     this.client = new Client();
     this.database = new SQLite3(config.dbPath);
+    this.database.pragma('journal_mode = WAL');
+
     this.settings = new SettingsRespository(this.database);
     this.awaiting = new Set<string>();
     this.commands = new Map<string, Command>();
@@ -187,7 +189,7 @@ export class MaiBot {
     const commandName = matches[2].trim();
     let command = this.commands.get(commandName);
     if (!command) {
-      if (commandName !== 'help') return null;
+      if (commandName !== 'help' && commandName !== 'h') return null;
       command = this.helpCommand;
     }
 

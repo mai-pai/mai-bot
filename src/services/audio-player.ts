@@ -1,4 +1,4 @@
-import { Message, Snowflake, TextChannel, VoiceConnection } from 'discord.js';
+import { Guild, GuildMember, Message, Snowflake, TextChannel, VoiceConnection } from 'discord.js';
 import moment from 'moment';
 import { Readable } from 'stream';
 import ytdl, { videoFormat, videoInfo } from 'ytdl-core';
@@ -46,13 +46,14 @@ export class AudioPlayer {
 
   public play(message: Message): boolean {
     const guild = message.guild.id;
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
 
-    if (this.isPlaying(guild) || this.isPaused(guild) || !this.playlist.hasSongs(guild)) return false;
+    if (this.isPlaying(guild) || this.isPaused(guild) || !this.playlist.hasSongs(playlistId)) return false;
 
     let info = this.playing.get(guild);
     if (!info) {
       const songIndex = this.settings.get(guild, SettingType.SongIndex, 0);
-      const song = this.playlist.getSongAtIndex(guild, songIndex);
+      const song = this.playlist.getSongAtIndex(playlistId, songIndex);
       if (!song) return false;
 
       info = { player: this, entry: song, connection: message.guild.voiceConnection };
@@ -66,27 +67,29 @@ export class AudioPlayer {
   public addSong(message: Message, song: VideoDetails): number {
     const guild = message.guild.id;
     const user = message.author.id;
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
 
-    this.playlist.addSong(guild, user, song);
+    this.playlist.addSong(playlistId, user, song);
     if (!this.isPlaying(guild) && !this.isPaused(guild)) this.play(message);
 
-    const length = this.playlist.length(guild);
+    const length = this.playlist.length(playlistId);
     const info = this.playing.get(guild) as PlayerInfo;
 
-    return length - this.playlist.index(guild, info.entry) - 1;
+    return length - this.playlist.index(playlistId, info.entry);
   }
 
   public removeSong(guild: Snowflake, songNumber: number): PlayListEntry | undefined {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
     if (info) {
-      const index = this.playlist.index(guild, info.entry);
+      const index = this.playlist.index(playlistId, info.entry);
       if (songNumber === index + 1) {
         this.skip(guild);
-        return this.playlist.removeSong(guild, index);
+        return this.playlist.removeSong(playlistId, index);
       }
     }
 
-    if (songNumber > 0) return this.playlist.removeSong(guild, songNumber - 1);
+    if (songNumber > 0) return this.playlist.removeSong(playlistId, songNumber - 1);
   }
 
   public pause(guild: Snowflake): void {
@@ -110,6 +113,7 @@ export class AudioPlayer {
       if (info.connection) {
         info.connection.dispatcher.removeAllListeners();
         info.connection.dispatcher.end();
+        info.connection.removeAllListeners();
       }
       if (info.playMessage) info.playMessage.delete();
       if (info.stream) info.stream.destroy();
@@ -117,19 +121,20 @@ export class AudioPlayer {
   }
 
   public skip(guild: Snowflake, songNumber?: number): boolean {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
 
     if (!info || !info.connection || !info.connection.dispatcher) return false;
     if (songNumber === undefined || songNumber === null) songNumber = 0;
-    if (songNumber < 0 || songNumber > this.playlist.length(guild)) return false;
+    if (songNumber < 0 || songNumber > this.playlist.length(playlistId)) return false;
 
-    const index = this.playlist.index(guild, info.entry);
+    const index = this.playlist.index(playlistId, info.entry);
     if (songNumber === index + 1) return false;
-    if (songNumber > 0 && songNumber !== (index + 2)) {
+    if (songNumber > 0 && songNumber !== index + 2) {
       info.connection.dispatcher.removeAllListeners();
       info.connection.dispatcher.end();
 
-      const entry = this.playlist.getSongAtIndex(guild, songNumber - 1);
+      const entry = this.playlist.getSongAtIndex(playlistId, songNumber - 1);
       if (entry) info.entry = entry;
 
       this.voiceConnected.apply(info, [info.connection]);
@@ -149,22 +154,25 @@ export class AudioPlayer {
   }
 
   public isInRange(guild: Snowflake, songNumber: number): boolean {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const songIndex = songNumber - 1;
-    return songIndex >= 0 && songIndex < this.playlist.length(guild);
+    return songIndex >= 0 && songIndex < this.playlist.length(playlistId);
   }
 
   public getQueue(message: Message, pageNumber: number): QueueInfo | undefined {
     const guild = message.guild.id;
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
     if (!info) return;
 
-    return this.playlist.getQueue(guild, info.entry, pageNumber);
+    return this.playlist.getQueue(playlistId, info.entry, pageNumber);
 
     // const entry = this.playlist.getSongAtIndex(guild, 25) as PlayListEntry;
     // return this.playlist.getQueue(guild, entry, pageNumber);
   }
 
   public getCurrent(guild: Snowflake): CurrentSongInfo | undefined {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
 
     if (!info) return;
@@ -172,7 +180,7 @@ export class AudioPlayer {
     return {
       requestedBy: info.entry.requestedBy,
       song: info.entry.song,
-      songNumber: this.playlist.index(guild, info.entry) + 1,
+      songNumber: this.playlist.index(playlistId, info.entry) + 1,
     };
 
     // const entry = this.playlist.getSongAtIndex(guild, 0) as PlayListEntry;
@@ -184,6 +192,42 @@ export class AudioPlayer {
     if (!info || !info.connection || !info.connection.dispatcher) return 0;
 
     return info.connection.dispatcher.time;
+  }
+
+  public save(guild: Snowflake, snowflake: Snowflake): Error | undefined {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
+    if (playlistId === snowflake) return new Error("Can't over-write playlist with itself!");
+
+    const err = this.playlist.save(playlistId, snowflake);
+    if (err) return err;
+
+    this.settings.set(guild, SettingType.PlaylistId, snowflake);
+  }
+
+  public load(message: Message, snowflake?: Snowflake | undefined): Error | undefined {
+    const guild = message.guild.id;
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
+    const idToLoad = snowflake ? snowflake : guild;
+
+    if (playlistId === idToLoad) return new Error('Playlist already loaded!');
+
+    const err = this.playlist.load(playlistId, idToLoad);
+    if (err) return err;
+
+    this.settings.set(guild, SettingType.PlaylistId, idToLoad);
+    this.settings.set(guild, SettingType.SongIndex, 0);
+    this.stop(guild);
+    this.play(message);
+  }
+
+  public clear(guild: Snowflake): Error | undefined {
+    const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
+    const err = this.playlist.clear(playlistId);
+
+    if (err) return err;
+
+    this.stop(guild);
+    this.settings.set(guild, SettingType.SongIndex, 0);
   }
 
   private connect(message: Message, info: PlayerInfo) {
@@ -294,12 +338,13 @@ export class AudioPlayer {
       const playlist = player.playlist;
 
       const repeat = player.settings.get(guild, SettingType.Repeat, false);
-      const length = playlist.length(guild);
-      const index = playlist.index(guild, this.entry);
+      const playlistId = player.settings.get(guild, SettingType.PlaylistId, guild);
+      const length = playlist.length(playlistId);
+      const index = playlist.index(playlistId, this.entry);
       const hasNext = index + 1 < length;
       if (hasNext || repeat) {
         const songIndex = hasNext ? index + 1 : 0;
-        this.entry = playlist.getSongAtIndex(guild, songIndex) as PlayListEntry;
+        this.entry = playlist.getSongAtIndex(playlistId, songIndex) as PlayListEntry;
 
         player.settings.set(guild, SettingType.SongIndex, songIndex);
         setTimeout(player.voiceConnected.bind(this), 0, this.connection);
