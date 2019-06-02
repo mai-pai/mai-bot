@@ -22,7 +22,7 @@ export class YoutubeApi {
   private constructor(private apiKey: string) {
     this.client = google.youtube({
       auth: this.apiKey,
-      version: 'v3',
+      version: 'v3'
     });
   }
 
@@ -58,7 +58,7 @@ export class YoutubeApi {
     const response = await this.client.videos.list({
       hl: 'en',
       id: videoId,
-      part: 'snippet,contentDetails',
+      part: 'snippet,contentDetails'
     });
 
     const videos = response.data.items || [];
@@ -72,7 +72,7 @@ export class YoutubeApi {
           description: snippet.description,
           duration: moment.duration(contentDetails.duration).asSeconds(),
           id,
-          title: snippet.title,
+          title: snippet.title
         });
     }
 
@@ -86,7 +86,7 @@ export class YoutubeApi {
       maxResults: maxResults || 5,
       part: 'id,snippet',
       q: query,
-      type: 'video',
+      type: 'video'
     });
 
     const videos = new Array<Video>();
@@ -99,7 +99,7 @@ export class YoutubeApi {
           videos.push({
             description: snippet.description,
             id: itemId.videoId,
-            title: snippet.title,
+            title: snippet.title
           });
       }
     }

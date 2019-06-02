@@ -23,7 +23,9 @@ export class SaveCommand extends Command {
 
       if (err) return message.channel.send(`:x: ${err.message}`);
 
-      return message.channel.send(`:ballot_box_with_check: Playlist save as \`${message.member.displayName}'s Playlist\`.`);
+      return message.channel.send(
+        `:ballot_box_with_check: Playlist save as \`${message.member.displayName}'s Playlist\`.`
+      );
     }
 
     return this.onBlock(message, BlockReason.NotPlaying);

@@ -53,7 +53,11 @@ export class PlayListRepository {
     return !!(playlist && playlist.length > 0);
   }
 
-  public addSong(playlistId: Snowflake | Guild | GuildMember, requestedBy: Snowflake | GuildMember, song: VideoDetails): PlayListEntry {
+  public addSong(
+    playlistId: Snowflake | Guild | GuildMember,
+    requestedBy: Snowflake | GuildMember,
+    song: VideoDetails
+  ): PlayListEntry {
     const id = this.initialize(playlistId);
     const userId = this.getSnowflake(requestedBy) as Snowflake;
     const playlist = this.playlists.get(id) as PlayListEntry[];
@@ -123,14 +127,13 @@ export class PlayListRepository {
 
     if (playlist.length === 0 || index === -1) return;
     const pageCount = Math.ceil(playlist.length / pageSize);
-    const pageNumber = page === 0 ? (Math.floor(index / pageSize) + 1) : (page > pageCount || page < 1 ? 1 : page);
+    const pageNumber = page === 0 ? Math.floor(index / pageSize) + 1 : page > pageCount || page < 1 ? 1 : page;
     const queueStart = (pageNumber - 1) * pageSize;
     const queue = queueStart < playlist.length ? playlist.slice(queueStart, queueStart + pageSize) : [];
-    
+
     // console.log(`# of Songs: ${playlist.length}, Page: ${pageNumber}`);
     let totalDuration = 0;
-    for (const entry of playlist)
-      totalDuration += entry.song.duration;
+    for (const entry of playlist) totalDuration += entry.song.duration;
 
     return {
       current,
@@ -156,20 +159,22 @@ export class PlayListRepository {
     return playlist.findIndex(e => e.id === entry.id);
   }
 
-  public save(playlistId: Snowflake | Guild | GuildMember, snowflake: Snowflake | Guild | GuildMember): Error | undefined {
+  public save(
+    playlistId: Snowflake | Guild | GuildMember,
+    snowflake: Snowflake | Guild | GuildMember
+  ): Error | undefined {
     if (playlistId === snowflake) return new Error("Can't over-write playlist with itself!");
 
     const id = this.initialize(playlistId);
     const saveId = this.getSnowflake(snowflake);
     const playlist = this.playlists.get(id) as PlayListEntry[];
 
-    if (playlist.length === 0) return new Error("There are no song(s) to save!");
+    if (playlist.length === 0) return new Error('There are no song(s) to save!');
 
     this.database.prepare('BEGIN').run();
     this.database.prepare('DELETE FROM playlist WHERE snowflake = ?').run(saveId);
     const insertStmt = this.database.prepare('INSERT INTO playlist VALUES(?, ?, ?)');
-    for (const entry of playlist)
-      insertStmt.run(saveId, entry.id, JSON.stringify(entry));
+    for (const entry of playlist) insertStmt.run(saveId, entry.id, JSON.stringify(entry));
 
     this.playlists.delete(id);
     this.playlists.set(saveId, playlist);
@@ -194,7 +199,7 @@ export class PlayListRepository {
   }
 
   private getSnowflake(snowflake: Snowflake | Guild | GuildMember): Snowflake {
-    return (snowflake instanceof Guild || snowflake instanceof GuildMember) ? snowflake.id : snowflake;
+    return snowflake instanceof Guild || snowflake instanceof GuildMember ? snowflake.id : snowflake;
   }
 
   private initialize(snowflake: Snowflake | Guild | GuildMember): Snowflake {

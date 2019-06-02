@@ -58,7 +58,7 @@ export class QueueCommand extends Command {
           const playlistId = this.bot.settings.get(guild, SettingType.PlaylistId, guild);
           let playlistName = message.guild.name;
           if (playlistId !== guild) {
-            const member = message.guild.members.find("id", playlistId);
+            const member = message.guild.members.find('id', playlistId);
             if (member && member.displayName) playlistName = member.displayName;
           }
           embed.addField(`:musical_note: ${playlistName}'s Playlist`, text.join('\n')).setFooter(
@@ -70,7 +70,7 @@ export class QueueCommand extends Command {
         }
 
         if (embed.fields && embed.fields.length > 0) {
-          if (queueMessage) queueMessage = await queueMessage.edit( embed);
+          if (queueMessage) queueMessage = await queueMessage.edit(embed);
           else queueMessage = (await message.channel.send(embed)) as Message;
 
           if (queue.pageCount < 2) return queueMessage;
@@ -88,7 +88,7 @@ export class QueueCommand extends Command {
             const reaction = (await queueMessage.awaitReactions(filter, {
               errors: ['time'],
               max: 1,
-              time: 15000,
+              time: 15000
             })).first();
 
             if (reaction.emoji.name === '◀') pageNumber = queue.pageNumber - 1;

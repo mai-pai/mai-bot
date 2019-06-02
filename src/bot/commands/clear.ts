@@ -24,8 +24,7 @@ export class ClearCommand extends Command {
       const isAdmin = message.member.hasPermission('ADMINISTRATOR');
       const isOwner = this.bot.isOwner(message.member.id);
 
-      if (!isAdmin && !isOwner)
-        return message.channel.send(`:x: Playlist(s) can only be cleared by their owner!`);
+      if (!isAdmin && !isOwner) return message.channel.send(`:x: Playlist(s) can only be cleared by their owner!`);
     }
 
     const err = this.bot.player.clear(guild);

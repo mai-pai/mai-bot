@@ -1,5 +1,10 @@
+import { Client } from 'discord.js';
+import { BotConfig } from 'json-types';
 import { MaiBot } from './bot/mai-bot';
-import config from './config.json';
+import { PlecoFish } from './bot/pleco';
+import config = require('./config.json');
 
-const bot = new MaiBot(config);
+const client = new Client();
+const bot = new MaiBot(client, config as BotConfig);
+const pleco = new PlecoFish(client, config as BotConfig);
 bot.start();

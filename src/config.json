@@ -2,5 +2,11 @@
     "token": "<discord-bot-token>",
     "ytkey": "<youtube-api-key>",
     "owner": "<bot owner id>",
-    "dbPath": "./mai-bot.db"
+    "dbPath": "<path to sqlite db>",
+    "pleco": {
+      "guild": "<guild id>",
+      "role": "<outcast role id>",
+      "channel": "<log channel id>",
+      "member": "<pleco fish bot id>"
+    }
 }

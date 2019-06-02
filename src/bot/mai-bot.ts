@@ -1,5 +1,6 @@
 import SQLite3, { Database } from 'better-sqlite3';
 import { ActivityType, Client, GuildMember, Message, Presence, RichEmbed, Snowflake } from 'discord.js';
+import { BotConfig } from 'json-types';
 import { AudioPlayer } from '../services/audio-player';
 import { SettingsRespository, SettingType } from '../services/settings-repository';
 import { YoutubeApi } from '../services/youtube-api';
@@ -18,16 +19,14 @@ export class MaiBot {
   public settings: SettingsRespository;
 
   private awaiting: Set<string>;
-  private client: Client;
   private commands: Map<string, Command>;
   private commandPatterns: Map<string, RegExp>;
   private commandHelp: Map<any, { [index: string]: any }>;
   private helpCommand: HelpCommand;
   private timeouts: Map<Snowflake, NodeJS.Timeout>;
 
-  constructor(private config: any) {
-    this.client = new Client();
-    this.database = new SQLite3(config.dbPath);
+  constructor(private client: Client, private config: BotConfig) {
+    this.database = new SQLite3(this.config.dbPath);
     this.database.pragma('journal_mode = WAL');
 
     this.settings = new SettingsRespository(this.database);
@@ -57,9 +56,13 @@ export class MaiBot {
   }
 
   public start(): void {
-    this.client.on('ready', () => {
+    this.client.once('ready', async () => {
       console.log(`Logged in as ${this.client.user.tag}.`);
     });
+
+    // this.client.on('raw', (event: any) => {
+    //   console.log('\nRaw event data:\n', event);
+    // });
 
     this.client.on('message', (message: Message) => {
       // TODO: Handle messages

@@ -9,7 +9,7 @@ export enum BlockReason {
   InvalidArgs,
   NotPlaying,
   NoArgsNeeded,
-  VoiceChannel,
+  VoiceChannel
 }
 
 export abstract class Command {

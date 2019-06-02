@@ -20,7 +20,7 @@ export class SettingsCommand extends Command {
       repeat: SettingType.Repeat,
       role: SettingType.Role,
       tc: SettingType.TextChannel,
-      vc: SettingType.VoiceChannel,
+      vc: SettingType.VoiceChannel
     };
   }
 
@@ -73,7 +73,7 @@ export class SettingsCommand extends Command {
             `**Voice Channel**: *${vc ? vc : 'None'}*`,
             `**Repeat**: *${repeat}*`,
             `**Now Playing Message**: *${playMsg}*`,
-            `**Prefix**: *${prefix}*`,
+            `**Prefix**: *${prefix}*`
           ].join('\n')
         );
       return message.channel.send(`:tools: Settings for **${message.guild.name}**`, embed);

@@ -28,7 +28,7 @@ enum VoiceStatus {
   CONNECTING = 1,
   AUTHENTICATING = 2,
   RECONNECTING = 3,
-  DISCONNECTED = 4,
+  DISCONNECTED = 4
 }
 
 export class AudioPlayer {
@@ -72,10 +72,7 @@ export class AudioPlayer {
     this.playlist.addSong(playlistId, user, song);
     if (!this.isPlaying(guild) && !this.isPaused(guild)) this.play(message);
 
-    const length = this.playlist.length(playlistId);
-    const info = this.playing.get(guild) as PlayerInfo;
-
-    return length - this.playlist.index(playlistId, info.entry);
+    return this.playlist.length(playlistId);
   }
 
   public removeSong(guild: Snowflake, songNumber: number): PlayListEntry | undefined {
@@ -83,7 +80,7 @@ export class AudioPlayer {
     const info = this.playing.get(guild);
     if (info) {
       const index = this.playlist.index(playlistId, info.entry);
-      if (songNumber === index + 1) {
+      if (songNumber === index + 1 || songNumber === 0) {
         this.skip(guild);
         return this.playlist.removeSong(playlistId, index);
       }
@@ -180,7 +177,7 @@ export class AudioPlayer {
     return {
       requestedBy: info.entry.requestedBy,
       song: info.entry.song,
-      songNumber: this.playlist.index(playlistId, info.entry) + 1,
+      songNumber: this.playlist.index(playlistId, info.entry) + 1
     };
 
     // const entry = this.playlist.getSongAtIndex(guild, 0) as PlayListEntry;
@@ -263,7 +260,7 @@ export class AudioPlayer {
         }
       });
     }
-    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x100000 });
+    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly' });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
 
