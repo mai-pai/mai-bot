@@ -260,7 +260,7 @@ export class AudioPlayer {
         }
       });
     }
-    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly' });
+    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x20000 /* 128kb */});
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
 
