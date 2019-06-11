@@ -38,6 +38,10 @@ export class PlecoFish {
           console.log('Pleco fish is offline, enabling pleco fish clone.');
           this.enable();
         } else console.log('Pleco is online!');
+      } else {
+        this.config.manage = false;
+        console.log('Pleco is not part of this server :pepehands:');
+        this.enable();
       }
     }
   }
