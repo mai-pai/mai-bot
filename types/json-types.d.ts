@@ -11,6 +11,7 @@ export interface BotConfig {
 
 export interface PlecoConfig {
   enabled: boolean,
+  manage: boolean,
   channel: Snowflake,
   guild: Snowflake,
   member: Snowflake

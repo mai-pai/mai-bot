@@ -5,6 +5,7 @@
     "dbPath": "<path to sqlite db>",
     "pleco": {
       "enabled": false,
+      "manage": false,
       "guild": "<guild id>",
       "role": "<outcast role id>",
       "channel": "<log channel id>",

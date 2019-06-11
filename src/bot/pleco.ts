@@ -44,15 +44,19 @@ export class PlecoFish {
 
   private enable(): void {
     this.previousCount = 0;
-    this.client.on('guildMemberAdd', this.memberAdded);
-    this.client.on('guildMemberUpdate', this.memberUpdated);
+    if (this.config.manage) {
+      this.client.on('guildMemberAdd', this.memberAdded);
+      this.client.on('guildMemberUpdate', this.memberUpdated);
+    }
     this.client.on('guildMemberRemove', this.memberRemoved);
     this.client.on('messageDelete', this.messageDeleted);
   }
 
   private disable(): void {
-    this.client.off('guildMemberAdd', this.memberAdded);
-    this.client.off('guildMemberUpdate', this.memberUpdated);
+    if (this.config.manage) {
+      this.client.off('guildMemberAdd', this.memberAdded);
+      this.client.off('guildMemberUpdate', this.memberUpdated);
+    }
     this.client.off('guildMemberRemove', this.memberRemoved);
     this.client.off('messageDelete', this.messageDeleted);
   }
