@@ -8,5 +8,5 @@ import config = require('./config.json');
 const client = new Client();
 const bot = new MaiBot(client, config as BotConfig);
 const pleco = new PlecoFish(client, config as BotConfig);
-const translator = new TranslateBot(client);
+const translator = new TranslateBot(client, config as BotConfig);
 bot.start();
