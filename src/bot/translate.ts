@@ -1,4 +1,5 @@
 import { Client, Message, RichEmbed } from 'discord.js';
+import { BotConfig, TranslateConfig } from 'json-types';
 import miniget = require('miniget');
 
 type Translation = {
@@ -8,17 +9,24 @@ type Translation = {
 
 const TRANSLATE_URL = 'https://script.google.com/macros/s/AKfycby2Uy7BjXaQm24MNkNmVkTF56EG0sGpVcKZaKlsLlty_0KlrY4/exec';
 export class TranslateBot {
-  constructor(private client: Client) {
-    if (this.client.readyTimestamp && this.client.readyTimestamp < Date.now()) this.initialize();
-    else
-      this.client.once('ready', () => {
-        this.initialize();
-      });
+  private config: TranslateConfig;
+
+  constructor(private client: Client, config: BotConfig) {
+    this.config = config.translate;
+
+    // tslint:disable-next-line: curly
+    if (this.config.enabled) {
+      if (this.client.readyTimestamp && this.client.readyTimestamp < Date.now()) this.initialize();
+      else
+        this.client.once('ready', () => {
+          this.initialize();
+        });
+    }
   }
 
   private initialize(): void {
     this.client.on('message', async (message: Message) => {
-      if (!message.author.bot || message.author.id !== '585808775630553112') return;
+      if (!message.author.bot || message.author.id !== this.config.author) return;
 
       const embed = message.embeds[0];
       if (!embed) return;

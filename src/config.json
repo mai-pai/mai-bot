@@ -4,9 +4,14 @@
     "owner": "<bot owner id>",
     "dbPath": "<path to sqlite db>",
     "pleco": {
+      "enabled": false,
       "guild": "<guild id>",
       "role": "<outcast role id>",
       "channel": "<log channel id>",
       "member": "<pleco fish bot id>"
+    },
+    "translate": {
+      "enabled": false,
+      "author": "<id of twitter hook>"
     }
 }

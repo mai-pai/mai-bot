@@ -13,11 +13,14 @@ export class PlecoFish {
   constructor(private client: Client, config: BotConfig) {
     this.config = config.pleco;
 
-    if (this.client.readyTimestamp && this.client.readyTimestamp < Date.now()) this.initialize();
-    else
-      this.client.once('ready', () => {
-        this.initialize();
-      });
+    // tslint:disable-next-line: curly
+    if (this.config.enabled) {
+      if (this.client.readyTimestamp && this.client.readyTimestamp < Date.now()) this.initialize();
+      else
+        this.client.once('ready', () => {
+          this.initialize();
+        });
+    }
   }
 
   private async initialize(): Promise<void> {
