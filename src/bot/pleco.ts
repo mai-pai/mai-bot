@@ -208,7 +208,10 @@ export class PlecoFish {
           embed.attachFile(attachment).setImage(`attachment://${filename}`);
         }
       }
-    } else embed.setTitle('Deleted Message').addField('Textual Content: ', ` ${message.content}`);
+    } else {
+      if (message.content.trim() === '') return;
+      embed.setTitle('Deleted Message').addField('Textual Content: ', ` ${message.content}`);
+    }
 
     logs.send(embed);
   };
@@ -226,6 +229,7 @@ export class PlecoFish {
 
       stream.on('error', error => {
         console.log(`An error occurred trying to retrieving: ${url}`);
+        console.log(error);
         reject(error);
       });
     });
