@@ -6,6 +6,7 @@ import { SettingsRespository, SettingType } from '../services/settings-repositor
 import { YoutubeApi } from '../services/youtube-api';
 import * as Commands from './commands';
 import { Command } from './commands/base';
+import { DebugCommand } from './commands/debug';
 import { HelpCommand } from './commands/help';
 
 interface ICommand {
@@ -17,15 +18,18 @@ export class MaiBot {
   public database: Database;
   public player: AudioPlayer;
   public settings: SettingsRespository;
+  public debug: boolean;
 
   private awaiting: Set<string>;
   private commands: Map<string, Command>;
   private commandPatterns: Map<string, RegExp>;
   private commandHelp: Map<any, { [index: string]: any }>;
   private helpCommand: HelpCommand;
+  private debugCommand: DebugCommand;
   private timeouts: Map<Snowflake, NodeJS.Timeout>;
 
   constructor(private client: Client, private config: BotConfig) {
+    this.debug = false;
     this.database = new SQLite3(this.config.dbPath);
     this.database.pragma('journal_mode = WAL');
 
@@ -35,6 +39,7 @@ export class MaiBot {
     this.commandPatterns = new Map<string, RegExp>();
     this.player = new AudioPlayer(this);
     this.helpCommand = new HelpCommand(this);
+    this.debugCommand = new DebugCommand(this);
     this.timeouts = new Map<Snowflake, NodeJS.Timeout>();
 
     // Setup Youtube API client
@@ -191,9 +196,11 @@ export class MaiBot {
     console.log(`Command Received: ${message.content}`);
     const commandName = matches[2].trim();
     let command = this.commands.get(commandName);
+    // tslint:disable-next-line: curly
     if (!command) {
-      if (commandName !== 'help' && commandName !== 'h') return null;
-      command = this.helpCommand;
+      if (commandName === 'help' || commandName === 'h') command = this.helpCommand;
+      else if (commandName === 'debug') command = this.debugCommand;
+      else return null;
     }
 
     const argString = message.content.substring(matches[1].length + matches[2].length).trim();

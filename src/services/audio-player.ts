@@ -263,7 +263,8 @@ export class AudioPlayer {
     info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x2000000 /* 32 MB */ });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
-    info.stream.on('progress', player.streamProgress);
+    if (player.bot.debug)
+        info.stream.on('progress', player.streamProgress);
     info.stream.once('response', () => {
       const dispatcher = connection.playStream(info.stream as Readable);
       dispatcher.once('start', player.dispatcherStarted.bind(info));
