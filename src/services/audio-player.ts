@@ -260,15 +260,17 @@ export class AudioPlayer {
         }
       });
     }
-    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x20000 /* 128kb */});
+    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x2000000 /* 32 MB */ });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
-
-    const dispatcher = connection.playStream(info.stream);
-    dispatcher.once('start', player.dispatcherStarted.bind(info));
-    dispatcher.once('error', player.dispatcherError);
-    dispatcher.on('debug', player.dispatcherDebug);
-    dispatcher.on('end', player.dispatcherEnded.bind(info));
+    info.stream.on('progress', player.streamProgress);
+    info.stream.once('response', () => {
+      const dispatcher = connection.playStream(info.stream as Readable);
+      dispatcher.once('start', player.dispatcherStarted.bind(info));
+      dispatcher.once('error', player.dispatcherError);
+      dispatcher.on('debug', player.dispatcherDebug);
+      dispatcher.on('end', player.dispatcherEnded.bind(info));
+    });
   }
 
   private streamInfo(this: PlayerInfo, info: videoInfo, format: videoFormat): void {
@@ -279,6 +281,10 @@ export class AudioPlayer {
   private streamError(error: Error): void {
     console.log('Error occurred in youtube stream!');
     console.log(error);
+  }
+
+  private streamProgress(chunkLength: number, downloaded: number, size: number): void {
+    console.log(`Downloaded: ${downloaded}/${size}`);
   }
 
   private dispatcherStarted(this: PlayerInfo): void {
@@ -325,6 +331,7 @@ export class AudioPlayer {
       console.log(`Dispatcher ended with reason: ${reason}`);
 
     if (this.stream) {
+      this.stream.removeListener('progress', this.player.streamProgress);
       this.stream.destroy();
       this.stream = undefined;
     }

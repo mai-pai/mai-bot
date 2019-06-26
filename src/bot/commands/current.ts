@@ -34,7 +34,7 @@ export class CurrentCommand extends Command {
       let iconUrl = '';
 
       if (current.requestedBy) {
-        const member = message.guild.members.find('id', current.requestedBy);
+        const member = message.guild.members.get(current.requestedBy);
         if (member && member.user && member.user.avatarURL) iconUrl = member.user.avatarURL;
       } else iconUrl = this.bot.getAvatarUrl();
 
@@ -49,7 +49,7 @@ export class CurrentCommand extends Command {
 
       let requester = 'Unknown';
       if (current.requestedBy) {
-        const member = message.guild.members.find('id', current.requestedBy);
+        const member = message.guild.members.get(current.requestedBy);
         if (member && member.displayName) requester = member.displayName;
       }
       embed

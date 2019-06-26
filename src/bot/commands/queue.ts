@@ -58,7 +58,7 @@ export class QueueCommand extends Command {
           const playlistId = this.bot.settings.get(guild, SettingType.PlaylistId, guild);
           let playlistName = message.guild.name;
           if (playlistId !== guild) {
-            const member = message.guild.members.find('id', playlistId);
+            const member = message.guild.members.get(playlistId);
             if (member && member.displayName) playlistName = member.displayName;
           }
           embed.addField(`:musical_note: ${playlistName}'s Playlist`, text.join('\n')).setFooter(

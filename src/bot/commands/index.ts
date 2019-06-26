@@ -12,4 +12,4 @@ export { SearchCommand } from './search';
 export { SettingsCommand } from './settings';
 export { ShuffleCommand } from './shuffle';
 export { SkipCommand } from './skip';
-export { StopCommand } from './stop';
+export { StopCommand as DcCommand, StopCommand } from './stop';
