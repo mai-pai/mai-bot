@@ -260,7 +260,7 @@ export class AudioPlayer {
         }
       });
     }
-    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x2000000 /* 32 MB */ });
+    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x100000 /* 1 MB */ });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError);
     if (player.bot.debug)
@@ -328,7 +328,7 @@ export class AudioPlayer {
 
   private dispatcherEnded(this: PlayerInfo, reason: string) {
     console.log(`Finished playing ${this.entry.song.title}`);
-    if (reason && !reason.startsWith('Stream is not generating quickly enough.') && !reason.startsWith('user'))
+    if ((reason && !reason.startsWith('Stream is not generating quickly enough.') && !reason.startsWith('user')) || this.player.bot.debug)
       console.log(`Dispatcher ended with reason: ${reason}`);
 
     if (this.stream) {
