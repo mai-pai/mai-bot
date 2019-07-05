@@ -260,9 +260,12 @@ export class AudioPlayer {
         }
       });
     }
+
+    if (player.bot.debug)
+      console.log(`Started downloading: ${info.entry.song.title}`);
     info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x100000 /* 1 MB */ });
     info.stream.once('info', player.streamInfo.bind(info));
-    info.stream.once('error', player.streamError);
+    info.stream.once('error', player.streamError.bind(info));
     if (player.bot.debug)
         info.stream.on('progress', player.streamProgress);
     info.stream.once('response', () => {
@@ -279,9 +282,11 @@ export class AudioPlayer {
     this.ytdlFormat = format;
   }
 
-  private streamError(error: Error): void {
+  private streamError(this: PlayerInfo, error: Error): void {
     console.log('Error occurred in youtube stream!');
     console.log(error);
+
+    this.player.dispatcherEnded.apply(this, [`${error.message}`]);
   }
 
   private streamProgress(chunkLength: number, downloaded: number, size: number): void {
