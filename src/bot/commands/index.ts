@@ -1,5 +1,5 @@
 export { ClearCommand } from './clear';
-export { CurrentCommand } from './current';
+export { InfoCommand } from './info';
 export { LoadCommand } from './load';
 export { LoopCommand } from './loop';
 export { PauseCommand } from './pause';

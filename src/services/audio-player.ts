@@ -17,9 +17,10 @@ type PlayerInfo = {
   ytdlFormat?: videoFormat;
 };
 
-type CurrentSongInfo = {
-  song: VideoDetails;
+type SongInfo = {
+  isCurrent: boolean;
   requestedBy?: Snowflake;
+  song: VideoDetails;
   songNumber: number;
 };
 
@@ -168,16 +169,19 @@ export class AudioPlayer {
     // return this.playlist.getQueue(guild, entry, pageNumber);
   }
 
-  public getCurrent(guild: Snowflake): CurrentSongInfo | undefined {
+  public getCurrentOrSongNumber(guild: Snowflake, songNumber: number): SongInfo | undefined {
     const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
+    const entry = songNumber > 0 ? this.playlist.getSongAtIndex(playlistId, songNumber - 1)
+                                 : (info ? info.entry : undefined);
 
-    if (!info) return;
+    if (!entry) return;
 
     return {
-      requestedBy: info.entry.requestedBy,
-      song: info.entry.song,
-      songNumber: this.playlist.index(playlistId, info.entry) + 1
+      isCurrent: (!!info && info.entry === entry),
+      requestedBy: entry.requestedBy,
+      song: entry.song,
+      songNumber: this.playlist.index(playlistId, entry) + 1
     };
 
     // const entry = this.playlist.getSongAtIndex(guild, 0) as PlayListEntry;
@@ -261,15 +265,13 @@ export class AudioPlayer {
       });
     }
 
-    if (player.bot.debug)
-      console.log(`Started downloading: ${info.entry.song.title}`);
-    info.stream = ytdl(info.entry.song.id, { filter: 'audioonly', highWaterMark: 0x100000 /* 1 MB */ });
+    if (player.bot.debug) console.log(`Started downloading: ${info.entry.song.title}`);
+    info.stream = ytdl(info.entry.song.id, { highWaterMark: 0x2000000 /* 32 MB */ });
     info.stream.once('info', player.streamInfo.bind(info));
     info.stream.once('error', player.streamError.bind(info));
-    if (player.bot.debug)
-        info.stream.on('progress', player.streamProgress);
+    if (player.bot.debug) info.stream.on('progress', player.streamProgress);
     info.stream.once('response', () => {
-      const dispatcher = connection.playStream(info.stream as Readable);
+      const dispatcher = connection.playStream(info.stream as Readable, { passes: 3, bitrate: 'auto' });
       dispatcher.once('start', player.dispatcherStarted.bind(info));
       dispatcher.once('error', player.dispatcherError);
       dispatcher.on('debug', player.dispatcherDebug);
@@ -333,7 +335,10 @@ export class AudioPlayer {
 
   private dispatcherEnded(this: PlayerInfo, reason: string) {
     console.log(`Finished playing ${this.entry.song.title}`);
-    if ((reason && !reason.startsWith('Stream is not generating quickly enough.') && !reason.startsWith('user')) || this.player.bot.debug)
+    if (
+      (reason && !reason.startsWith('Stream is not generating quickly enough.') && !reason.startsWith('user')) ||
+      this.player.bot.debug
+    )
       console.log(`Dispatcher ended with reason: ${reason}`);
 
     if (this.stream) {

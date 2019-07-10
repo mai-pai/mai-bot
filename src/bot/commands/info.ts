@@ -4,7 +4,7 @@ import { YoutubeApi } from '../../services/youtube-api';
 import { MaiBot } from '../mai-bot';
 import { BlockReason, Command } from './base';
 
-export class CurrentCommand extends Command {
+export class InfoCommand extends Command {
   private ytapi: YoutubeApi;
 
   constructor(bot: MaiBot) {
@@ -23,42 +23,52 @@ export class CurrentCommand extends Command {
 
     const guild = message.guild.id;
     if (this.bot.player.isPlaying(guild)) {
-      if (args) return this.onBlock(message, BlockReason.NoArgsNeeded);
+      let songNumber = 0;
+      if (args) {
+        songNumber = parseInt(args.trim(), 10);
+        if (isNaN(songNumber) || songNumber < 1) return this.onBlock(message, BlockReason.InvalidArgs);
+        if (!this.bot.player.isInRange(guild, songNumber))
+          return message.channel.send(':x: The specified position is outside of the queue length!');
+      }
 
-      const current = this.bot.player.getCurrent(guild);
+      const info = this.bot.player.getCurrentOrSongNumber(guild, songNumber);
 
-      if (!current) return message.channel.send(':x: No current song playing!');
+      if (!info) return message.channel.send(':x: Unable to get retrieve song info!');
 
-      const thumbnailUrl = await this.ytapi.getThumbnailUrl(current.song.id);
+      const thumbnailUrl = await this.ytapi.getThumbnailUrl(info.song.id);
       const embed = new RichEmbed().setColor(0x3498db);
       let iconUrl = '';
 
-      if (current.requestedBy) {
-        const member = message.guild.members.get(current.requestedBy);
+      if (info.requestedBy) {
+        const member = message.guild.members.get(info.requestedBy);
         if (member && member.user && member.user.avatarURL) iconUrl = member.user.avatarURL;
       } else iconUrl = this.bot.getAvatarUrl();
 
-      const currentTime = this.bot.player.getTime(guild);
-      const progress = `${moment()
-        .startOf('day')
-        .milliseconds(currentTime)
-        .format('HH:mm:ss')}/${moment()
-        .startOf('day')
-        .seconds(current.song.duration)
-        .format('HH:mm:ss')}`;
 
       let requester = 'Unknown';
-      if (current.requestedBy) {
-        const member = message.guild.members.get(current.requestedBy);
+      if (info.requestedBy) {
+        const member = message.guild.members.get(info.requestedBy);
         if (member && member.displayName) requester = member.displayName;
       }
       embed
         .setAuthor('Now Playing', iconUrl, undefined)
         .setDescription(
-          `[**${current.songNumber}.** ${current.song.title}](https://www.youtube.com/watch?v=${current.song.id})`
+          `[**${info.songNumber}.** ${info.song.title}](https://www.youtube.com/watch?v=${info.song.id})`
         )
         .addField('Requested By', requester, true)
-        .addField('Progress', progress, true);
+
+      if (info.isCurrent) {
+        const currentTime = this.bot.player.getTime(guild);
+        const progress = `${moment()
+          .startOf('day')
+          .milliseconds(currentTime)
+          .format('HH:mm:ss')}/${moment()
+          .startOf('day')
+          .seconds(info.song.duration)
+          .format('HH:mm:ss')}`;
+  
+        embed.addField('Progress', progress, true);
+      }
 
       if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
 
