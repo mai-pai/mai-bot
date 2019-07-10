@@ -51,7 +51,7 @@ export class InfoCommand extends Command {
         if (member && member.displayName) requester = member.displayName;
       }
       embed
-        .setAuthor('Now Playing', iconUrl, undefined)
+        .setAuthor(info.isCurrent ? 'Now Playing' : 'Song Information', iconUrl, undefined)
         .setDescription(
           `[**${info.songNumber}.** ${info.song.title}](https://www.youtube.com/watch?v=${info.song.id})`
         )
