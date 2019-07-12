@@ -17,7 +17,7 @@ export class InfoCommand extends Command {
     return 'Displays the information about the current song.';
   }
 
-  public async run(message: Message, args: string): Promise<Message | Message[]> {
+  public async run(message: Message, args: string, name?: string): Promise<Message | Message[]> {
     const blockedMessage = this.checkPermissions(message);
     if (blockedMessage) return blockedMessage;
 
@@ -25,6 +25,8 @@ export class InfoCommand extends Command {
     if (this.bot.player.isPlaying(guild)) {
       let songNumber = 0;
       if (args) {
+        if (name === "current") return this.onBlock(message, BlockReason.NoArgsNeeded);
+
         songNumber = parseInt(args.trim(), 10);
         if (isNaN(songNumber) || songNumber < 1) return this.onBlock(message, BlockReason.InvalidArgs);
         if (!this.bot.player.isInRange(guild, songNumber))

@@ -10,8 +10,9 @@ import { DebugCommand } from './commands/debug';
 import { HelpCommand } from './commands/help';
 
 interface ICommand {
-  run: (message: Message, args: string) => Promise<Message | Message[]>;
   args: string;
+  name: string;
+  run: (message: Message, args: string, name?: string) => Promise<Message | Message[]>;
 }
 
 export class MaiBot {
@@ -76,7 +77,7 @@ export class MaiBot {
       const command = this.parseCommand(message);
       if (!command) return; // If no command was given, ignore message
 
-      command.run(message, command.args);
+      command.run(message, command.args, command.name);
     });
 
     // this.client.on('messageUpdate', (oldMessage: Message, newMessage: Message) => {
@@ -205,7 +206,7 @@ export class MaiBot {
 
     const argString = message.content.substring(matches[1].length + matches[2].length).trim();
 
-    return { run: command.run.bind(command), args: argString };
+    return { run: command.run.bind(command), args: argString, name: commandName };
   }
 
   private shouldHanleMessage(message: Message, oldMessage?: Message): boolean {

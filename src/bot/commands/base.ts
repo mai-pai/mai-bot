@@ -23,7 +23,7 @@ export abstract class Command {
     return 'Function not yet implemented.';
   }
 
-  public abstract run(message: Message, args: string): Promise<Message | Message[]>;
+  public abstract run(message: Message, args: string, name?: string): Promise<Message | Message[]>;
 
   /**
    * Called to check permissions for the command. A message promise is returned
