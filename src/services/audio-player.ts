@@ -172,13 +172,13 @@ export class AudioPlayer {
   public getCurrentOrSongNumber(guild: Snowflake, songNumber: number): SongInfo | undefined {
     const playlistId = this.settings.get(guild, SettingType.PlaylistId, guild);
     const info = this.playing.get(guild);
-    const entry = songNumber > 0 ? this.playlist.getSongAtIndex(playlistId, songNumber - 1)
-                                 : (info ? info.entry : undefined);
+    const entry =
+      songNumber > 0 ? this.playlist.getSongAtIndex(playlistId, songNumber - 1) : info ? info.entry : undefined;
 
     if (!entry) return;
 
     return {
-      isCurrent: (!!info && info.entry === entry),
+      isCurrent: !!info && info.entry === entry,
       requestedBy: entry.requestedBy,
       song: entry.song,
       songNumber: this.playlist.index(playlistId, entry) + 1
@@ -288,7 +288,14 @@ export class AudioPlayer {
     console.log('Error occurred in youtube stream!');
     console.log(error);
 
-    this.player.dispatcherEnded.apply(this, [`${error.message}`]);
+    const guild = this.connection.channel.guild;
+    const tcId = this.player.settings.get(guild, SettingType.TextChannel, undefined);
+    const tc = guild.channels.find(c => c.type === 'text' && c.id === tcId) as TextChannel;
+    let promise: Promise<any> = Promise.resolve();
+
+    if (tc) promise = tc.send(`:warning: Skipping \`${this.entry.song.title}\`. Reason: \`${error.message}\``);
+
+    promise.finally(() => this.player.dispatcherEnded.apply(this, [`${error.message}`]));
   }
 
   private streamProgress(chunkLength: number, downloaded: number, size: number): void {
