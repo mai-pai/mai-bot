@@ -231,6 +231,12 @@ export class AudioPlayer {
     this.settings.set(guild, SettingType.SongIndex, 0);
   }
 
+  public setVolume(guild: Snowflake, volume: number): void {
+    const info = this.playing.get(guild);
+    if (!info || !info.connection || !info.connection.dispatcher) return;
+    info.connection.dispatcher.setVolume(volume / 100.0);
+  }
+
   private connect(message: Message, info: PlayerInfo) {
     const connection = message.guild.voiceConnection;
     if (!connection || connection.status === VoiceStatus.DISCONNECTED) {
@@ -271,7 +277,8 @@ export class AudioPlayer {
     info.stream.once('error', player.streamError.bind(info));
     if (player.bot.debug) info.stream.on('progress', player.streamProgress);
     info.stream.once('response', () => {
-      const dispatcher = connection.playStream(info.stream as Readable, { passes: 3, bitrate: 'auto' });
+      const volume = player.settings.get(guild, SettingType.Volume, 100.0);
+      const dispatcher = connection.playStream(info.stream as Readable, { passes: 3, bitrate: 'auto',  volume: volume / 100.0});
       dispatcher.once('start', player.dispatcherStarted.bind(info));
       dispatcher.once('error', player.dispatcherError);
       dispatcher.on('debug', player.dispatcherDebug);

@@ -42,6 +42,7 @@ export class SettingsCommand extends Command {
     if (!matches && args.length === 0) {
       const repeat = this.settings.get(guild, SettingType.Repeat, false);
       const playMsg = this.settings.get(guild, SettingType.ShowPlayingMessage, false);
+      const volume = this.settings.get(guild, SettingType.Volume, 100);
       let role = this.settings.get(guild, SettingType.Role, undefined);
       let tc = this.settings.get(guild, SettingType.TextChannel, undefined);
       let vc = this.settings.get(guild, SettingType.VoiceChannel, undefined);
@@ -73,7 +74,8 @@ export class SettingsCommand extends Command {
             `**Voice Channel**: *${vc ? vc : 'None'}*`,
             `**Repeat**: *${repeat}*`,
             `**Now Playing Message**: *${playMsg}*`,
-            `**Prefix**: *${prefix}*`
+            `**Prefix**: *${prefix}*`,
+            `**Volume**: *${volume}*`
           ].join('\n')
         );
       return message.channel.send(`:tools: Settings for **${message.guild.name}**`, embed);
