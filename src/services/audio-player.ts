@@ -143,7 +143,8 @@ export class AudioPlayer {
 
   public isPlaying(guild: Snowflake): boolean {
     const info = this.playing.get(guild);
-    return !!(info && info.connection && info.connection.dispatcher && !info.connection.dispatcher.destroyed);
+    //return !!(info && info.connection && info.connection.dispatcher && !info.connection.dispatcher.destroyed);
+    return !!(info && info.connection);
   }
 
   public isPaused(guild: Snowflake): boolean {

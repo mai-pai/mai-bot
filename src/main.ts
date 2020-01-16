@@ -3,8 +3,9 @@ import { BotConfig } from 'json-types';
 import { MaiBot } from './bot/mai-bot';
 import { PlecoFish } from './bot/pleco';
 import { TranslateBot } from './bot/translate';
-import config = require('./config.json');
+import configJson = require('./config.json');
 
+const config = configJson as unknown;
 const client = new Client();
 const bot = new MaiBot(client, config as BotConfig);
 const pleco = new PlecoFish(client, config as BotConfig);

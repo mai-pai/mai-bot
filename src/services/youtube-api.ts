@@ -26,7 +26,7 @@ export class YoutubeApi {
     });
   }
 
-  public async getThumbnailUrl(videoId: string): Promise<string | void> {
+  public async getThumbnailUrl(videoId: string): Promise<string | null | undefined> {
     if (!videoId) throw new Error('Video ID required.');
 
     const response = await this.client.videos.list({
@@ -49,10 +49,10 @@ export class YoutubeApi {
       }
     }
 
-    return Promise.resolve();
+    return Promise.resolve(null);
   }
 
-  public async get(videoId: string): Promise<VideoDetails | void> {
+  public async get(videoId: string): Promise<VideoDetails | null | undefined> {
     if (!videoId) throw new Error('Video ID required.');
 
     const response = await this.client.videos.list({
@@ -70,13 +70,13 @@ export class YoutubeApi {
       if (id && snippet && snippet.title)
         return Promise.resolve({
           description: snippet.description,
-          duration: moment.duration(contentDetails.duration).asSeconds(),
+          duration: moment.duration(contentDetails.duration as string).asSeconds(),
           id,
           title: snippet.title
         });
     }
 
-    return Promise.resolve();
+    return Promise.resolve(null);
   }
 
   public async search(query: string, maxResults?: number): Promise<Video[]> {
@@ -111,12 +111,12 @@ export class YoutubeApi {
 export type Video = {
   id: string;
   title: string;
-  description?: string;
+  description: string | null | undefined;
 };
 
 export type VideoDetails = {
   id: string;
   title: string;
   duration: number;
-  description?: string;
+  description: string | null | undefined;
 };

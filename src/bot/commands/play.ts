@@ -62,7 +62,7 @@ export class PlayCommand extends Command {
       return message.channel.send(`:x: You must be listening in \`${vc.name}\` to use this command!`);
 
     const videoId = ytdl.getVideoID(args);
-    let videoInfo: VideoDetails | void;
+    let videoInfo: VideoDetails | null | undefined;
     if (videoId instanceof Error) {
       const videos = await this.ytapi.search(args, 1);
       if (videos && videos.length > 0) videoInfo = await this.ytapi.get(videos[0].id);
