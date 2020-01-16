@@ -109,8 +109,10 @@ export class AudioPlayer {
       this.playing.delete(guild);
 
       if (info.connection) {
-        info.connection.dispatcher.removeAllListeners();
-        info.connection.dispatcher.end();
+        if (info.connection.dispatcher) {
+            info.connection.dispatcher.removeAllListeners();
+            info.connection.dispatcher.end();
+        }
         info.connection.removeAllListeners();
       }
       if (info.playMessage) info.playMessage.delete();
@@ -288,6 +290,8 @@ export class AudioPlayer {
   }
 
   private streamInfo(this: PlayerInfo, info: videoInfo, format: videoFormat): void {
+    if (this.player.bot.debug)
+        console.log("Video info received....");
     this.ytdlInfo = info;
     this.ytdlFormat = format;
   }

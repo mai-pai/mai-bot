@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon",
     "prod": "nodemon ./build/main.js",
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
