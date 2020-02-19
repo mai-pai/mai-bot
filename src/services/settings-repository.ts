@@ -10,7 +10,8 @@ export enum SettingType {
   Prefix = 'prefix',
   SongIndex = 'songIndex',
   PlaylistId = 'playlistId',
-  Volume = 'volume'
+  Volume = 'volume',
+  AnyVoiceChannel = 'anyVoiceChannel'
 }
 
 type Settings = { [index in SettingType]?: any };

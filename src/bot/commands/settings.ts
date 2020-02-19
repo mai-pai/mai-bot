@@ -20,12 +20,13 @@ export class SettingsCommand extends Command {
       repeat: SettingType.Repeat,
       role: SettingType.Role,
       tc: SettingType.TextChannel,
-      vc: SettingType.VoiceChannel
+      vc: SettingType.VoiceChannel,
+      avc: SettingType.AnyVoiceChannel
     };
   }
 
   public arguments(): string {
-    return '[[role | tc | vc | repeat | npm | prefix] value]';
+    return '[[role | tc | vc | repeat | npm | prefix | avc] value]';
   }
 
   public description(): string {
@@ -43,6 +44,7 @@ export class SettingsCommand extends Command {
       const repeat = this.settings.get(guild, SettingType.Repeat, false);
       const playMsg = this.settings.get(guild, SettingType.ShowPlayingMessage, false);
       const volume = this.settings.get(guild, SettingType.Volume, 100);
+      const avc = this.settings.get(guild, SettingType.AnyVoiceChannel, false);
       let role = this.settings.get(guild, SettingType.Role, undefined);
       let tc = this.settings.get(guild, SettingType.TextChannel, undefined);
       let vc = this.settings.get(guild, SettingType.VoiceChannel, undefined);
@@ -75,7 +77,8 @@ export class SettingsCommand extends Command {
             `**Repeat**: *${repeat}*`,
             `**Now Playing Message**: *${playMsg}*`,
             `**Prefix**: *${prefix}*`,
-            `**Volume**: *${volume}*`
+            `**Volume**: *${volume}*`,
+            `**Any Voice Channel**: *${avc}*`
           ].join('\n')
         );
       return message.channel.send(`:tools: Settings for **${message.guild.name}**`, embed);
@@ -94,6 +97,7 @@ export class SettingsCommand extends Command {
     switch (setting) {
       case SettingType.ShowPlayingMessage:
       case SettingType.Repeat:
+      case SettingType.AnyVoiceChannel:
         const value = matches[2].trim().toLowerCase();
         if (this.booleanMap[value] === undefined)
           return message.channel.send(
@@ -101,12 +105,12 @@ export class SettingsCommand extends Command {
           );
 
         this.settings.set(guild, setting, this.booleanMap[value]);
-        const replyMsg =
-          setting === SettingType.ShowPlayingMessage
-            ? `:ballot_box_with_check: Now playing message will ${
-                this.booleanMap[value] ? 'now' : 'no longer'
-              } be sent when a song starts.`
-            : `:ballot_box_with_check: The repeat state has been set to **${this.booleanMap[value]}**.`;
+        let replyMsg = `:ballot_box_with_check: The repeat state has been set to **${this.booleanMap[value]}**.`;
+        if (setting === SettingType.ShowPlayingMessage)
+            replyMsg = `:ballot_box_with_check: Now playing message will ${ this.booleanMap[value] ? 'now' : 'no longer' } be sent when a song starts.`;
+        else if (setting === SettingType.AnyVoiceChannel)
+            replyMsg = `:ballot_box_with_check: Allow playing in any voice channel is now ${ this.booleanMap[value] ? 'enabled' : 'disabled' }.`;
+
         return message.channel.send(replyMsg);
       case SettingType.Prefix:
         const newPrefix = matches[2].trim();

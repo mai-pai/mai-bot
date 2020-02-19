@@ -35,6 +35,7 @@ export class PlayCommand extends Command {
     const vcId = this.bot.settings.get(guildId, SettingType.VoiceChannel, undefined);
     const tcId = this.bot.settings.get(guildId, SettingType.TextChannel, undefined);
     const prefix = this.bot.settings.get(guildId, SettingType.Prefix, SettingsRespository.DefaultPrefix);
+    const anyVC = this.bot.settings.get(guildId, SettingType.AnyVoiceChannel, false);
 
     if (tcId) {
       const tc = message.guild.channels.find(c => c.id === tcId && c.type === 'text');
@@ -58,7 +59,7 @@ export class PlayCommand extends Command {
       );
     }
 
-    if (vc !== message.member.voiceChannel)
+    if (!anyVC && vc !== message.member.voiceChannel)
       return message.channel.send(`:x: You must be listening in \`${vc.name}\` to use this command!`);
 
     const videoId = ytdl.getVideoID(args);
