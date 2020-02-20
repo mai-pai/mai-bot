@@ -17,6 +17,7 @@ type Translation = {
 const TRANSLATE_URL = 'https://script.google.com/macros/s/AKfycby2Uy7BjXaQm24MNkNmVkTF56EG0sGpVcKZaKlsLlty_0KlrY4/exec';
 export class TranslateCommand extends Command {
   private readonly argumentPattern: RegExp = new RegExp('^\\s*\/([^\\s]+)', 'i');
+  private readonly pingPattern: RegExp = new RegExp('<@[ !&]*\\d+>', 'gi');
   constructor(bot: MaiBot) {
     super(bot);
   }
@@ -55,7 +56,11 @@ export class TranslateCommand extends Command {
         return message.channel.send(`:x: ${translation.error.message}`);
     }
 
-    return message.channel.send(translation.translatedText);
+    const translatedText = translation.translatedText.replace(this.pingPattern, function (match) {
+        return match.replace(' ', '');
+    });
+
+    return message.channel.send(translatedText);
   }
 
   private getTranslation(url: string): Promise<Translation> {
