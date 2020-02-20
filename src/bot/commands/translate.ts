@@ -17,7 +17,7 @@ type Translation = {
 const TRANSLATE_URL = 'https://script.google.com/macros/s/AKfycby2Uy7BjXaQm24MNkNmVkTF56EG0sGpVcKZaKlsLlty_0KlrY4/exec';
 export class TranslateCommand extends Command {
   private readonly argumentPattern: RegExp = new RegExp('^\\s*\/([^\\s]+)', 'i');
-  private readonly pingPattern: RegExp = new RegExp('<(@|#|\uFF03)[ !&]*\\d+>', 'gi');
+  private readonly pingPattern: RegExp = new RegExp('<(@|#|\uFF03)[ !&]*\\d+\\s*>', 'gi');
   constructor(bot: MaiBot) {
     super(bot);
   }
@@ -60,20 +60,26 @@ export class TranslateCommand extends Command {
             return message.channel.send(`:x: ${translation.error.message}`);
         }
 
-        const translatedText = translation.translatedText.replace(this.pingPattern, function (match, symbol) {
-            return match.replace(' ', '').replace('\uFF03', '#');
-        });
+        const translatedText = translation.translatedText.replace(this.pingPattern, this.fixTagsInTranslation);
 
         console.log(translatedText.charCodeAt(1));
 
         return message.channel.send(translatedText);
     } else {
         const translation = await this.getPhoneticTranslation(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&dt=t&q=${query}`);
-        const phoneticText = translation[0][1][3];
+        let phoneticText = translation[0][1][3];
 
-        if (phoneticText) return message.channel.send(phoneticText);
+        if (phoneticText) {
+            phoneticText = phoneticText.replace(this.pingPattern, this.fixTagsInTranslation);
+
+            return message.channel.send(phoneticText);
+        }
         return message.channel.send(`:x: Phonetic translation doesn't exist for '${args}'!`);
     }
+  }
+
+  private fixTagsInTranslation(match: string) {
+      return match.replace(/ /g, '').replace('\uFF03', '#');
   }
 
   private getPhoneticTranslation(url: string): Promise<any> {
