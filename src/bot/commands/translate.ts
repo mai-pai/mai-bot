@@ -80,7 +80,9 @@ export class TranslateCommand extends Command {
         if (phoneticText) {
             phoneticText = phoneticText.replace(this.pingPattern, this.fixTagsInTranslation);
             if (!isTts) return message.channel.send(phoneticText);
+        }
 
+        if (isTts) {
             const tl = translation[2];
             const q = args.replace(this.rolePattern, (match: string, roleId: string) => {
                 const role = message.guild.roles.find(r => r.id === roleId);
@@ -92,6 +94,8 @@ export class TranslateCommand extends Command {
                 const user = message.guild.members.find(m => m.id === userId);
                 return user ? user.displayName : match;
             });
+
+            if (!phoneticText) phoneticText = args;
 
             phoneticText = phoneticText.replace(this.rolePattern, (match: string, roleId: string) => {
                 const role = message.guild.roles.find(r => r.id === roleId);
