@@ -75,7 +75,7 @@ export class TranslateCommand extends Command {
         return message.channel.send(translatedText);
     } else {
         const translation = await this.getPhoneticTranslation(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&dt=t&q=${query}`);
-        let phoneticText = translation[0][1][3];
+        let phoneticText = translation[0][translation[0].length - 1][3];
 
         if (phoneticText) {
             phoneticText = phoneticText.replace(this.pingPattern, this.fixTagsInTranslation);
@@ -105,7 +105,7 @@ export class TranslateCommand extends Command {
             });
 
             const audio: Buffer = await this.getTts(`https://translate.googleapis.com/translate_tts?client=gtx&tl=${tl}&q=${encodeURIComponent(q)}&ie=UTF-8&idx=0`);
-            const attachment = new Attachment(audio, `${phoneticText}.mp3`);
+            const attachment = new Attachment(audio, `${phoneticText.length > 30 ? phoneticText.substring(0, 31) : phoneticText}.mp3`);
             return message.channel.send(attachment);
         }
 
