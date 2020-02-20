@@ -13,5 +13,5 @@ export { SettingsCommand } from './settings';
 export { ShuffleCommand } from './shuffle';
 export { SkipCommand } from './skip';
 export { StopCommand as DcCommand, StopCommand } from './stop';
-export { TranslateCommand } from './translate';
+export { TranslateCommand as TlCommand, TranslateCommand} from './translate';
 export { VolumeCommand as VCommand, VolumeCommand } from './volume';
