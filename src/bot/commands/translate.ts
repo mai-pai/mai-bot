@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Attachment, Message } from 'discord.js';
 import { MaiBot } from '../mai-bot';
 import { BlockReason, Command } from './base';
 import miniget = require('miniget');
@@ -18,6 +18,10 @@ const TRANSLATE_URL = 'https://script.google.com/macros/s/AKfycby2Uy7BjXaQm24MNk
 export class TranslateCommand extends Command {
   private readonly argumentPattern: RegExp = new RegExp('^\\s*\/([^\\s]+)', 'i');
   private readonly pingPattern: RegExp = new RegExp('<(@|#|\uFF03)[ !&]*\\d+\\s*>', 'gi');
+  private readonly rolePattern: RegExp = new RegExp('<@&?([0-9]+)>', 'gi');
+  private readonly channelPattern: RegExp = new RegExp('<#([0-9]+)>', 'gi');
+  private readonly userPattern: RegExp = new RegExp('<@!?([0-9]+)>', 'gi');
+
   constructor(bot: MaiBot) {
     super(bot);
   }
@@ -37,8 +41,12 @@ export class TranslateCommand extends Command {
     const matches = this.argumentPattern.exec(args || '');
 
     let isPhonetic = false;
+    let isTts = false;
     if (matches && matches.length === 2) {
-        if (matches[1].toLowerCase() === 'phonetic') {
+        if (matches[1].toLowerCase() === 'tts') {
+            isPhonetic = true;
+            isTts = true;
+        } else if (matches[1].toLowerCase() === 'phonetic') {
             isPhonetic = true;
         } else if (!iso6391.validate(matches[1])) {
             const code = iso6391.getCode(matches[1]);
@@ -71,14 +79,60 @@ export class TranslateCommand extends Command {
 
         if (phoneticText) {
             phoneticText = phoneticText.replace(this.pingPattern, this.fixTagsInTranslation);
+            if (!isTts) return message.channel.send(phoneticText);
 
-            return message.channel.send(phoneticText);
+            const tl = translation[2];
+            const q = args.replace(this.rolePattern, (match: string, roleId: string) => {
+                const role = message.guild.roles.find(r => r.id === roleId);
+                return role ? role.name : match;
+            }).replace(this.channelPattern, (match: string, channelId: string) => {
+                const channel = message.guild.channels.find(c => c.id === channelId);
+                return channel ? channel.name : match;
+            }).replace(this.userPattern, (match: string, userId: string) => {
+                const user = message.guild.members.find(m => m.id === userId);
+                return user ? user.displayName : match;
+            });
+
+            phoneticText = phoneticText.replace(this.rolePattern, (match: string, roleId: string) => {
+                const role = message.guild.roles.find(r => r.id === roleId);
+                return role ? role.name : match;
+            }).replace(this.channelPattern, (match: string, channelId: string) => {
+                const channel = message.guild.channels.find(c => c.id === channelId);
+                return channel ? channel.name : match;
+            }).replace(this.userPattern, (match: string, userId: string) => {
+                const user = message.guild.members.find(m => m.id === userId);
+                return user ? user.displayName : match;
+            });
+
+            const audio: Buffer = await this.getTts(`https://translate.googleapis.com/translate_tts?client=gtx&tl=${tl}&q=${encodeURIComponent(q)}&ie=UTF-8&idx=0`);
+            const attachment = new Attachment(audio, `${phoneticText}.mp3`);
+            return message.channel.send(attachment);
         }
+
         return message.channel.send(`:x: Phonetic translation doesn't exist for '${args}'!`);
     }
   }
 
-  private fixTagsInTranslation(match: string) {
+  private getTts(url: string): Promise<Buffer> {
+      const stream = miniget(url);
+      const chunks: Uint8Array[] = [];
+
+      stream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+
+      return new Promise((resolve, reject) => {
+          stream.on('end', () => {
+              const buffer = Buffer.concat(chunks);
+              resolve(buffer);
+          });
+
+          stream.on('error', error => {
+              console.log(`An error occurred trying to retrieve: ${url}`);
+              reject(error);
+          });
+      });
+  }
+
+  private fixTagsInTranslation(match: string): string {
       return match.replace(/ /g, '').replace('\uFF03', '#');
   }
 
