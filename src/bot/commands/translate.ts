@@ -112,7 +112,7 @@ export class TranslateCommand extends Command {
           return user ? user.displayName : match;
         });
 
-        if (!phoneticText) phoneticText = args;
+        if (!phoneticText) phoneticText = ttsHasTarget ? translations[0][0].replace(this.numberSign, '#').replace(this.ampersand,'&').replace(this.exclamation, '!').replace(this.pingPattern, this.fixTagsInTranslation) : args;
 
         phoneticText = phoneticText.replace(this.rolePattern, (match: string, roleId: string) => {
           const role = message.guild.roles.find(r => r.id === roleId);
