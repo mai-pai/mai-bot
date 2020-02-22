@@ -39,7 +39,7 @@ export class TranslateCommand extends Command {
   }
 
   public async run(message: Message, args: string): Promise<Message | Message[]> {
-    if (!this.bot.isOwner(message.member.id)) return message;
+    //if (!this.bot.isOwner(message.member.id)) return message;
 
     let target: string | undefined = undefined;
     const matches = this.argumentPattern.exec(args || '');
@@ -125,9 +125,14 @@ export class TranslateCommand extends Command {
           return user ? user.displayName : match;
         });
 
-        const audio = await this.getTts(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&idx=0&tl=${tl}&q=${encodeURIComponent(q)}`);
-        const attachment = new Attachment(audio, `${phoneticText.length > 30 ? phoneticText.substring(0, 31) : phoneticText}.mp3`);
-        return message.channel.send(attachment);
+        const audio = await this.getTts(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&idx=0&tl=${tl}&q=${encodeURIComponent(q)}`).catch(e => undefined);
+
+        if (audio) {
+            const attachment = new Attachment(audio, `${phoneticText.length > 30 ? phoneticText.substring(0, 31) : phoneticText}.mp3`);
+            return message.channel.send(attachment);
+        }
+
+        return message.channel.send(`:x: Unable to get text-to-speech of '${q}' in '${iso6391.getName(tl)}'.`);
       }
 
       return message.channel.send(`:x: Phonetic translation doesn't exist for '${args}'!`);
