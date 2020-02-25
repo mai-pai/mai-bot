@@ -5,6 +5,7 @@ export interface BotConfig {
   ytkey: string,
   owner: Snowflake,
   dbPath: string,
+  allowNickname: boolean,
   pleco: PlecoConfig,
   translate: TranslateConfig
 }

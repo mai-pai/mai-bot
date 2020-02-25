@@ -1,5 +1,5 @@
 import SQLite3, { Database } from 'better-sqlite3';
-import { ActivityType, Client, GuildMember, Message, Presence, RichEmbed, Snowflake } from 'discord.js';
+import { ActivityType, Client, Guild, GuildChannel, GuildMember, Message, Presence, RichEmbed, Snowflake } from 'discord.js';
 import { BotConfig } from 'json-types';
 import { AudioPlayer } from '../services/audio-player';
 import { SettingsRespository, SettingType } from '../services/settings-repository';
@@ -78,6 +78,30 @@ export class MaiBot {
       if (!command) return; // If no command was given, ignore message
 
       command.run(message, command.args, command.name);
+    });
+
+    this.client.on('guildMemberUpdate', async (oldMember: GuildMember, newMember: GuildMember) => {
+        if (!this.config.allowNickname && newMember.user.bot && newMember.user === this.client.user) {
+            if (newMember.displayName !== this.client.user.username) {
+
+                const audits = await newMember.guild.fetchAuditLogs({type: 'MEMBER_UPDATE', limit: 3}).catch(reason => console.log(reason));
+
+                if (!audits) return;
+
+
+                const entry = audits.entries.find(a => a.target === this.client.user && a.changes[0].key === 'nick' && a.changes[0].new !== this.client.user.username);
+                if (!this.isOwner(entry.executor.id)) {
+                    newMember.setNickname('').catch(console.log);
+
+                    // @ts-ignore
+                    const channel = newMember.guild.channels.get('587304370601852928') as TextChannel;
+                    //const channel = this.client.guilds.get('455456686732345365').channels.get('469854278589218826') as TextChannel;
+                    if (channel) {
+                        channel.send(`<@${entry.executor.id}> don't go changing my name <a:YuukiFukYou:601985792352583710>`);
+                    }
+                }
+            }
+        }
     });
 
     // this.client.on('messageUpdate', (oldMessage: Message, newMessage: Message) => {
