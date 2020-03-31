@@ -305,7 +305,11 @@ export class AudioPlayer {
     const tc = guild.channels.find(c => c.type === 'text' && c.id === tcId) as TextChannel;
     let promise: Promise<any> = Promise.resolve();
 
-    if (tc) promise = tc.send(`:warning: Skipping \`${this.entry.song.title}\`. Reason: \`${error.message}\``);
+    if (tc) {
+        const playlistId = this.player.settings.get(guild, SettingType.PlaylistId, guild);
+        const songNumber = this.player.playlist.index(playlistId, this.entry);
+        promise = tc.send(`:warning: Skipping \`${songNumber}: ${this.entry.song.title}\`. Reason: \`${error.message}\``);
+    }
 
     promise.finally(() => this.player.dispatcherEnded.apply(this, [`${error.message}`]));
   }
@@ -330,9 +334,11 @@ export class AudioPlayer {
         this.playMessage = undefined;
       }
 
+      const playlistId = settings.get(guild, SettingType.PlaylistId, guild);
+      const songNumber = this.player.playlist.index(playlistId, this.entry);
       promise.then(() => {
         tc.send(
-          `:musical_note: **Now playing** \`${this.entry.song.title} (${moment()
+          `:musical_note: **Now playing** \`${songNumber}: ${this.entry.song.title} (${moment()
             .startOf('day')
             .seconds(this.entry.song.duration)
             .format('HH:mm:ss')})\``

@@ -25,7 +25,7 @@ export class InfoCommand extends Command {
     if (this.bot.player.isPlaying(guild)) {
       let songNumber = 0;
       if (args) {
-        if (name === "current") return this.onBlock(message, BlockReason.NoArgsNeeded);
+        if (name === "current" || name === "np") return this.onBlock(message, BlockReason.NoArgsNeeded);
 
         songNumber = parseInt(args.trim(), 10);
         if (isNaN(songNumber) || songNumber < 1) return this.onBlock(message, BlockReason.InvalidArgs);
