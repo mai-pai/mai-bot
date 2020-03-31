@@ -307,7 +307,7 @@ export class AudioPlayer {
 
     if (tc) {
         const playlistId = this.player.settings.get(guild, SettingType.PlaylistId, guild);
-        const songNumber = this.player.playlist.index(playlistId, this.entry);
+        const songNumber = this.player.playlist.index(playlistId, this.entry) + 1;
         promise = tc.send(`:warning: Skipping \`${songNumber}: ${this.entry.song.title}\`. Reason: \`${error.message}\``);
     }
 
@@ -335,7 +335,7 @@ export class AudioPlayer {
       }
 
       const playlistId = settings.get(guild, SettingType.PlaylistId, guild);
-      const songNumber = this.player.playlist.index(playlistId, this.entry);
+      const songNumber = this.player.playlist.index(playlistId, this.entry) + 1;
       promise.then(() => {
         tc.send(
           `:musical_note: **Now playing** \`${songNumber}: ${this.entry.song.title} (${moment()
